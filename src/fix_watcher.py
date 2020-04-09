@@ -1,4 +1,5 @@
 import argparse
+import fileinput
 import json
 import logging
 import os
@@ -10,7 +11,8 @@ from os.path import join, exists
 
 USER_HOME_FOLDER = os.path.expanduser("~")
 DEFAULT_SDK_FOLDER = join(USER_HOME_FOLDER, "google-cloud-sdk")
-CONF_FILE = join(os.getcwd(), "conf.json")
+BASE_DIR = os.getcwd()
+CONF_FILE = join(BASE_DIR, "conf.json")
 BACKUP_FOLDER = join(os.getcwd(), "backup")
 
 
@@ -94,12 +96,30 @@ def backup(file_path):
         os.mkdir(BACKUP_FOLDER)
 
     dest = join(BACKUP_FOLDER, filename)
+
     if not exists(dest):
-        logging.info("Backing up file %s to %s", file_path, dest)
+        logging.info("Backing up file {} to {}".format(file_path, dest))
         shutil.copy(file_path, dest)
         return True
+    else:
+        logging.info("File {} already here {}".format(file_path, dest))
 
     return False
+
+
+def add_watchdog_to_lib(reg, source_file, text):
+    begin = False
+    stop = False
+
+    for line in fileinput.FileInput(source_file, inplace=1):
+        if text in line:
+            stop = True
+        if reg in line:
+            begin = True
+        if not stop and begin and "]" in line:
+            line = line.replace(line, text + line)
+            begin = False
+        print line,
 
 
 def install(target_path):
@@ -111,30 +131,46 @@ def install(target_path):
     Returns:
 
     """
-    date = datetime.now()
 
     app_engine = join(target_path, "platform", "google_appengine")
     app_engine_lib = join(app_engine, "lib")
 
-    mtime_file = join(app_engine, "google", "appengine",
-                      "tools", "devappserver2", "mtime_file_watcher.py")
     watchdog_path = join(app_engine_lib, "watchdog")
     pip_install("watchdog", target=watchdog_path)
 
-    conf = {
-        "last_execution": date,
-        "execs": [
-            {
-                "target": target_path,
-                "execution": date,
-                "watchdog": watchdog_path
-            }
-        ]
-    }
+    # date = datetime.now()
+    # conf = {
+    #     "last_execution": date,
+    #     "execs": [
+    #         {
+    #             "target": target_path,
+    #             "execution": date,
+    #             "watchdog": watchdog_path
+    #         }
+    #     ]
+    # }
+
+    mtime_file = join(app_engine, "google", "appengine",
+                      "tools", "devappserver2", "mtime_file_watcher.py")
+
+    wrapper_utils = join(app_engine, "wrapper_util.py")
 
     backup(mtime_file)
+    backup(wrapper_utils)
+
+    mtime_file_fix = join(BASE_DIR, 'fix', 'mtime_file_watcher.py')
+
+    replace_file(mtime_file, mtime_file_fix)
+
+    add_watchdog_to_lib("devappserver2_paths = stub_paths + [", wrapper_utils,
+                        "        os.path.join(dir_path, 'lib', 'watchdog'),\n")
 
     print("Target: {}\napp_engine:{}".format(target_path, app_engine))
+
+
+def replace_file(to_replace, fix):
+    os.remove(to_replace)
+    shutil.copy(fix, to_replace)
 
 
 def remove_folder(target_path):
@@ -160,8 +196,8 @@ def uninstall(target_path=None):
         logging.error("No previous install and no target !")
         return
 
-    with open('data.txt') as json_file:
-        conf = json.load(CONF_FILE)
+    with open(CONF_FILE) as json_file:
+        conf = json.load(json_file)
 
     if not target_path:
         last_execution_date = conf["last_execution"]
@@ -177,6 +213,11 @@ def uninstall(target_path=None):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO,
+                        format='%(levelname)s '
+                               '%(filename)s:%(lineno)d '
+                               '%(message)s')
+
     args = get_parser().parse_args()
     if args.uninstall:
         uninstall(args.from_)
