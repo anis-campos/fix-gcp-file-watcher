@@ -55,5 +55,5 @@ With each option being:
 
 | Option              | Definition                       | Default Value |
 | ------------------- | -------------------------------- | --- |
-| `watcher_extension` | list of `.ext` separated by a `,`| `.go,.py,.yaml`|
+| `watcher_extension` | list of `.ext` separated by a `,`| `.go,.py,.yaml` ([see mtime_file_watcher](https://github.com/anis-campos/fix-gcp-file-watcher/blob/master/fix/mtime_file_watcher.py#L21))|
 | | | |
