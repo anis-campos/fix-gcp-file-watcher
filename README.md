@@ -39,7 +39,7 @@ Set SDK location
 ----------------
 
 ```shell script
-GOOGLE_SDK_PATH='/path/to/sdk python'
+GOOGLE_SDK_PATH='/path/to/google-cloud-sdk'
 python fix_wacther --target $GOOGLE_SDK_PATH
 ```
 Configuration
