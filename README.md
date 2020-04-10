@@ -1,11 +1,10 @@
 FIX FILE WATCHER
 ===============
 
-This a simple fix to a unbearable default solution of google-cloud-sdk for the autoreload function of the `dev_appserver`.
-Indeed google decided to default to a pooling thread that consistently uses tons of CPU to check of the files of the project have ben edited
+This a simple fix to the unbearable default solution of google-cloud-sdk for the autoreload function of the `dev_appserver`.
+Indeed google decided to default to a pooling thread that consistently uses tons of CPU to check if the files of the project have been edited.
 
-So, to fi that, you just need to use this simple script, that will replace the default file_watcher implementation of the SDK, and replace it by 
-a way more simpler version based on [watchdog](https://github.com/gorakhargosh/watchdog) 
+So, to fix that, you just need to use this simple script, that will replace the default file_watcher implementation of the SDK, and replace it by a way more simpler version based on [watchdog](https://github.com/gorakhargosh/watchdog). The latest version of watchdog will be added to the google cloud dependencies, so no need to add it to you environment.
 
 HOW TO INSTALL
 -------------
