@@ -226,4 +226,4 @@ fabric.properties
 
 #project specifics
 /backup
-
+conf.json

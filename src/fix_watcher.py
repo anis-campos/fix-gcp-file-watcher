@@ -16,6 +16,14 @@ CONF_FILE = join(BASE_DIR, "conf.json")
 BACKUP_FOLDER = join(os.getcwd(), "backup")
 
 
+def json_dump(*args, **kwargs):
+    kwargs = kwargs or dict()
+    kwargs["default"] = str
+    kwargs["indent"] = 4
+    kwargs["sort_keys"] = True
+    return json.dump(*args, **kwargs)
+
+
 def get_parser():
     """
     Argument parser to read stdin arguments
@@ -82,29 +90,32 @@ def pip_install(package, target=None):
     return subprocess.check_call(command)
 
 
-def backup(file_path):
+def backup(backup_path, file_path):
     """
     Copy file to backup folder, enabling reset
     Args:
+        backup_path (str): backup folder path
         file_path (str): file path
     Returns:
-        (bool): True if file has been backed-up, False otherwise
+        bool: True if file has been backed-up, False otherwise
+        str: Destination path
+
     """
     filename = os.path.basename(file_path)
 
-    if not exists(BACKUP_FOLDER):
-        os.mkdir(BACKUP_FOLDER)
+    if not exists(backup_path):
+        os.mkdir(backup_path)
 
-    dest = join(BACKUP_FOLDER, filename)
-
+    dest = join(backup_path, filename)
+    backed_up = False
     if not exists(dest):
         logging.info("Backing up file {} to {}".format(file_path, dest))
         shutil.copy(file_path, dest)
-        return True
+        backed_up = True
     else:
         logging.info("File {} already here {}".format(file_path, dest))
 
-    return False
+    return backed_up, dest
 
 
 def add_watchdog_to_lib(reg, source_file, text):
@@ -131,6 +142,19 @@ def install(target_path):
     Returns:
 
     """
+    if exists(CONF_FILE):
+        with open(CONF_FILE) as json_file:
+            conf = json.load(json_file)
+    else:
+        with open(CONF_FILE, "w") as json_file:
+            conf = {}
+            json_dump(conf, json_file)
+
+    if "execs" not in conf:
+        conf["execs"] = []
+    if any([item for item in conf["execs"] if item["target"] == target_path]):
+        logging.warn("Already installed")
+        return
 
     app_engine = join(target_path, "platform", "google_appengine")
     app_engine_lib = join(app_engine, "lib")
@@ -138,32 +162,41 @@ def install(target_path):
     watchdog_path = join(app_engine_lib, "watchdog")
     pip_install("watchdog", target=watchdog_path)
 
-    # date = datetime.now()
-    # conf = {
-    #     "last_execution": date,
-    #     "execs": [
-    #         {
-    #             "target": target_path,
-    #             "execution": date,
-    #             "watchdog": watchdog_path
-    #         }
-    #     ]
-    # }
-
     mtime_file = join(app_engine, "google", "appengine",
                       "tools", "devappserver2", "mtime_file_watcher.py")
 
-    wrapper_utils = join(app_engine, "wrapper_util.py")
+    wrapper_util = join(app_engine, "wrapper_util.py")
 
-    backup(mtime_file)
-    backup(wrapper_utils)
+    backup_path = join(BACKUP_FOLDER, target_path.replace(os.path.sep, "_"))
+    _, mtime_file_bak = backup(backup_path, mtime_file)
+    _, wrapper_util_bak = backup(backup_path, wrapper_util)
 
     mtime_file_fix = join(BASE_DIR, 'fix', 'mtime_file_watcher.py')
 
     replace_file(mtime_file, mtime_file_fix)
 
-    add_watchdog_to_lib("devappserver2_paths = stub_paths + [", wrapper_utils,
+    add_watchdog_to_lib("devappserver2_paths = stub_paths + [", wrapper_util,
                         "        os.path.join(dir_path, 'lib', 'watchdog'),\n")
+
+    date = datetime.now()
+    conf["last_execution"] = date
+
+    conf["execs"].append({
+        "target": target_path,
+        "execution": date,
+        "watchdog": watchdog_path,
+        "backup_path": backup_path,
+        "wrapper_util": {
+            "backup": wrapper_util_bak,
+            "destination": wrapper_util
+        },
+        "mtime_file": {
+            "backup": mtime_file_bak,
+            "destination": mtime_file
+        }
+    })
+    with open(CONF_FILE, "w") as json_file:
+        json_dump(conf, json_file)
 
     print("Target: {}\napp_engine:{}".format(target_path, app_engine))
 
@@ -210,6 +243,15 @@ def uninstall(target_path=None):
         return
 
     shutil.rmtree(target["watchdog"], ignore_errors=True)
+    replace_file(target["wrapper_util"]["backup"], target["wrapper_util"]["destination"])
+    replace_file(target["mtime_file"]["backup"], target["mtime_file"]["destination"])
+    shutil.rmtree(target["watchdog"], ignore_errors=True)
+    shutil.rmtree(target["backup_path"], ignore_errors=True)
+
+    conf["execs"].remove(target)
+
+    with open(CONF_FILE, "w") as json_file:
+        json_dump(conf, json_file)
 
 
 if __name__ == '__main__':
