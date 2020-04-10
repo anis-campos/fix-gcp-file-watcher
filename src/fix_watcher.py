@@ -158,6 +158,7 @@ def install(target_path):
     Returns:
 
     """
+
     if exists(CONF_FILE):
         with open(CONF_FILE) as json_file:
             conf = json.load(json_file)
@@ -173,6 +174,9 @@ def install(target_path):
         return
 
     app_engine = join(target_path, "platform", "google_appengine")
+
+    print("Target: {}\napp_engine:{}".format(target_path, app_engine))
+
     app_engine_lib = join(app_engine, "lib")
 
     watchdog_path = join(app_engine_lib, "watchdog")
@@ -190,7 +194,7 @@ def install(target_path):
 
     mtime_file_fix = join(BASE_DIR, 'fix', 'mtime_file_watcher.py')
 
-    shutil.copy(mtime_file, mtime_file_fix)
+    shutil.copy(mtime_file_fix, mtime_file)
 
     fileList = glob.glob(dev_appserver_folder + os.path.sep + '*.pyc')
     for filePath in fileList:
@@ -223,7 +227,9 @@ def install(target_path):
     with open(CONF_FILE, "w") as json_file:
         json_dump(conf, json_file)
 
-    print("Target: {}\napp_engine:{}".format(target_path, app_engine))
+
+    logging.info("Install successful!")
+
 
 
 def remove_folder(target_path):
@@ -259,8 +265,8 @@ def uninstall(target_path=None):
         return
 
     shutil.rmtree(target["watchdog"], ignore_errors=True)
-    shutil.copy(target["wrapper_util"]["to_replace"], target["wrapper_util"]["original"])
-    shutil.copy(target["mtime_file"]["to_replace"], target["mtime_file"]["original"])
+    shutil.copy(target["wrapper_util"]["original"], target["wrapper_util"]["to_replace"])
+    shutil.copy(target["mtime_file"]["original"], target["mtime_file"]["to_replace"])
     shutil.rmtree(target["watchdog"], ignore_errors=True)
     shutil.rmtree(target["backup_path"], ignore_errors=True)
 
@@ -268,6 +274,8 @@ def uninstall(target_path=None):
 
     with open(CONF_FILE, "w") as json_file:
         json_dump(conf, json_file)
+
+    logging.info("Uninstall successful!")
 
 
 if __name__ == '__main__':
