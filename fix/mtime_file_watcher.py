@@ -89,7 +89,7 @@ class FileWatcher(object):
         # noinspection PyBroadException
         try:
             self.observer.stop()
-        except Exception:
+        except:
             logging.exception("can't stop observer")
 
 

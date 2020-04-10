@@ -1,5 +1,6 @@
 import argparse
 import fileinput
+import glob
 import json
 import logging
 import os
@@ -162,8 +163,9 @@ def install(target_path):
     watchdog_path = join(app_engine_lib, "watchdog")
     pip_install("watchdog", target=watchdog_path)
 
-    mtime_file = join(app_engine, "google", "appengine",
-                      "tools", "devappserver2", "mtime_file_watcher.py")
+    dev_appserver_folder = join(app_engine, "google", "appengine",
+                                "tools", "devappserver2")
+    mtime_file = join(dev_appserver_folder, "mtime_file_watcher.py")
 
     wrapper_util = join(app_engine, "wrapper_util.py")
 
@@ -174,6 +176,14 @@ def install(target_path):
     mtime_file_fix = join(BASE_DIR, 'fix', 'mtime_file_watcher.py')
 
     replace_file(mtime_file, mtime_file_fix)
+
+    fileList = glob.glob(dev_appserver_folder + os.path.sep + '*.pyc')
+    for filePath in fileList:
+        # noinspection PyBroadException
+        try:
+            os.remove(filePath)
+        except:
+            logging.exception("Error while deleting file : ", filePath)
 
     add_watchdog_to_lib("devappserver2_paths = stub_paths + [", wrapper_util,
                         "        os.path.join(dir_path, 'lib', 'watchdog'),\n")
@@ -187,12 +197,12 @@ def install(target_path):
         "watchdog": watchdog_path,
         "backup_path": backup_path,
         "wrapper_util": {
-            "backup": wrapper_util_bak,
-            "destination": wrapper_util
+            "to_replace": wrapper_util,
+            "original": wrapper_util_bak,
         },
         "mtime_file": {
-            "backup": mtime_file_bak,
-            "destination": mtime_file
+            "to_replace": mtime_file,
+            "original": mtime_file_bak,
         }
     })
     with open(CONF_FILE, "w") as json_file:
@@ -243,8 +253,8 @@ def uninstall(target_path=None):
         return
 
     shutil.rmtree(target["watchdog"], ignore_errors=True)
-    replace_file(target["wrapper_util"]["backup"], target["wrapper_util"]["destination"])
-    replace_file(target["mtime_file"]["backup"], target["mtime_file"]["destination"])
+    replace_file(target["wrapper_util"]["to_replace"], target["wrapper_util"]["original"])
+    replace_file(target["mtime_file"]["to_replace"], target["mtime_file"]["original"])
     shutil.rmtree(target["watchdog"], ignore_errors=True)
     shutil.rmtree(target["backup_path"], ignore_errors=True)
 
