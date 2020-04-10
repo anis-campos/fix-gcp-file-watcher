@@ -18,10 +18,15 @@ BACKUP_FOLDER = join(os.getcwd(), "backup")
 
 
 def json_dump(*args, **kwargs):
+    """
+    Sets the default encoding settings for json.dump
+    """
     kwargs = kwargs or dict()
-    kwargs["default"] = str
-    kwargs["indent"] = 4
-    kwargs["sort_keys"] = True
+    kwargs.update({
+        "default": str,
+        "indent": 4,
+        "sort_keys": True,
+    })
     return json.dump(*args, **kwargs)
 
 
