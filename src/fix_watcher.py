@@ -190,7 +190,7 @@ def install(target_path):
 
     mtime_file_fix = join(BASE_DIR, 'fix', 'mtime_file_watcher.py')
 
-    replace_file(mtime_file, mtime_file_fix)
+    shutil.copy(mtime_file, mtime_file_fix)
 
     fileList = glob.glob(dev_appserver_folder + os.path.sep + '*.pyc')
     for filePath in fileList:
@@ -226,17 +226,11 @@ def install(target_path):
     print("Target: {}\napp_engine:{}".format(target_path, app_engine))
 
 
-def replace_file(to_replace, fix):
-    os.remove(to_replace)
-    shutil.copy(fix, to_replace)
-
-
 def remove_folder(target_path):
     """
     Deletes a folder ( recursively )
     Args:
         target_path (str): path of folder to delete
-
     """
     shutil.rmtree(target_path)
 
@@ -268,8 +262,8 @@ def uninstall(target_path=None):
         return
 
     shutil.rmtree(target["watchdog"], ignore_errors=True)
-    replace_file(target["wrapper_util"]["to_replace"], target["wrapper_util"]["original"])
-    replace_file(target["mtime_file"]["to_replace"], target["mtime_file"]["original"])
+    shutil.copy(target["wrapper_util"]["to_replace"], target["wrapper_util"]["original"])
+    shutil.copy(target["mtime_file"]["to_replace"], target["mtime_file"]["original"])
     shutil.rmtree(target["watchdog"], ignore_errors=True)
     shutil.rmtree(target["backup_path"], ignore_errors=True)
 
