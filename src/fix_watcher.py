@@ -119,16 +119,26 @@ def backup(backup_path, file_path):
     return backed_up, dest
 
 
-def add_watchdog_to_lib(reg, source_file, text):
+def insert_text_before_the_end(begin_str, end_str, source_file, text):
+    """
+    This will try to insert just before the end of the block [begin_str, end_str].
+
+    Notes:
+        Change is made in place
+    Args:
+        begin_str: marks the begining of the block
+        end_str: marks the en of the block
+        source_file: file to edit
+        text: text to insert just before the end of the block
+    """
     begin = False
     stop = False
-
     for line in fileinput.FileInput(source_file, inplace=1):
         if text in line:
             stop = True
-        if reg in line:
+        if begin_str in line:
             begin = True
-        if not stop and begin and "]" in line:
+        if not stop and begin and end_str in line:
             line = line.replace(line, text + line)
             begin = False
         print line,
@@ -185,8 +195,8 @@ def install(target_path):
         except:
             logging.exception("Error while deleting file : ", filePath)
 
-    add_watchdog_to_lib("devappserver2_paths = stub_paths + [", wrapper_util,
-                        "        os.path.join(dir_path, 'lib', 'watchdog'),\n")
+    insert_text_before_the_end("devappserver2_paths = stub_paths + [", "]", wrapper_util,
+                               "        os.path.join(dir_path, 'lib', 'watchdog'),\n")
 
     date = datetime.now()
     conf["last_execution"] = date
