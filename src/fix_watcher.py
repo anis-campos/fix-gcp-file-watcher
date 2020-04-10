@@ -240,9 +240,6 @@ def uninstall(target_path=None):
     Undo the modifications
     Args:
         target_path (str): install directory of the sdk
-
-    Returns:
-
     """
     if not target_path and not exists(CONF_FILE):
         logging.error("No previous install and no target !")
@@ -274,13 +271,9 @@ def uninstall(target_path=None):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO,
-                        format='%(levelname)s '
-                               '%(filename)s:%(lineno)d '
-                               '%(message)s')
-
-    args = get_parser().parse_args()
-    if args.uninstall:
-        uninstall(args.from_)
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s %(filename)s:%(lineno)d %(message)s')
+    parsed = get_parser().parse_args()
+    if parsed.uninstall:
+        uninstall(parsed.from_)
     else:
-        install(args.to)
+        install(parsed.to)
