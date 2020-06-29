@@ -196,12 +196,12 @@ def install(target_path):
 
     shutil.copy(mtime_file_fix, mtime_file)
 
-    fileList = glob.glob(dev_appserver_folder + os.path.sep + '*.pyc')
-    for filePath in fileList:
+    file_list = glob.glob(dev_appserver_folder + os.path.sep + '*.pyc')
+    for filePath in file_list:
         # noinspection PyBroadException
         try:
             os.remove(filePath)
-        except:
+        except OSError:
             logging.exception("Error while deleting file : ", filePath)
 
     insert_text_before_the_end("devappserver2_paths = stub_paths + [", "]", wrapper_util,
@@ -227,9 +227,7 @@ def install(target_path):
     with open(CONF_FILE, "w") as json_file:
         json_dump(conf, json_file)
 
-
     logging.info("Install successful!")
-
 
 
 def remove_folder(target_path):

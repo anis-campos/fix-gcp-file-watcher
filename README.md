@@ -11,7 +11,7 @@ HOW TO INSTALL
 
 As simple as:
 ```shell script
-python fix_watcher
+python fix_watcher.py
 ```
 
 By default, it will assume that the sdk is installed at 
@@ -39,7 +39,7 @@ Set SDK location
 
 ```shell script
 GOOGLE_SDK_PATH='/path/to/google-cloud-sdk'
-python fix_watcher --target $GOOGLE_SDK_PATH
+python fix_wacther.py --target $GOOGLE_SDK_PATH
 ```
 Configuration
 ------------
