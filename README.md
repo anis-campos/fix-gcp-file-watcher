@@ -11,7 +11,7 @@ HOW TO INSTALL
 
 As simple as:
 ```shell script
-python fix_wacther
+python fix_watcher
 ```
 
 By default, it will assume that the sdk is installed at 
